@@ -29,11 +29,6 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.yaml")
 NEWS_CMD = "今日新闻"
 NEWS_ALIASES = {"60s", "新闻60秒", "看世界"}
 
-# /工具箱 的内容，新增功能时在这里补一行
-HELP_TEXT = """🧰 工具箱
-· /今日新闻
-  60 秒读懂世界每日新闻速览（别名：60s、新闻60秒、看世界）"""
-
 
 def load_dev_config() -> dict:
     """读 config.yaml（面向开发者的配置）。文件缺失或写错都不影响插件启动。"""
@@ -75,11 +70,6 @@ class ToolBoxPlugin(Star):
     async def cmd_news(self, event: AstrMessageEvent):
         """获取今日新闻。用法：/今日新闻"""
         yield await self._reply_news(event)
-
-    @filter.command("工具箱", alias={"toolbox", "功能列表"})
-    async def cmd_help(self, event: AstrMessageEvent):
-        """查看工具箱里有哪些功能"""
-        yield event.plain_result(HELP_TEXT)
 
     # ------------------------------------------------------------ LLM 触发
 
