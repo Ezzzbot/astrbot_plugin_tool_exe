@@ -1,12 +1,7 @@
 """大头的工具箱 · 插件入口。
 
-这里只有三类东西：
-    1. 指令触发（@filter.command）
-    2. LLM 触发（@filter.llm_tool）
-    3. 上面两者共用的取数据方法
-
-真正的业务逻辑都在 tools/ 目录里的功能模块中（比如 tools/news.py），
-这一层只负责读配置、调函数、发消息。
+每个功能一个方法：读配置 → 调 tools/ 里的函数 → 把结果发出去。
+真正的业务逻辑都在 tools/ 目录里的功能模块中（比如 tools/news.py）。
 """
 
 from __future__ import annotations
@@ -69,35 +64,25 @@ class ToolBoxPlugin(Star):
     @filter.command(NEWS_CMD, alias=NEWS_ALIASES)
     async def cmd_news(self, event: AstrMessageEvent):
         """获取今日新闻。用法：/今日新闻"""
-        yield await self._reply_news(event)
-
-    # ------------------------------------------------------------ LLM 触发
-
-    @filter.llm_tool(name="get_daily_news")
-    async def llm_news(self, event: AstrMessageEvent):
-        """获取今天的热点新闻速览。当用户问「今天有什么新闻」「最近发生了什么大事」时调用。"""
-        yield await self._reply_news(event)
-
-    # ------------------------------------------------------------ 两者共用
-
-    async def _reply_news(self, event: AstrMessageEvent):
-        """指令和 LLM 工具都走这里：读配置 → 调 tools 里的函数 → 组装成消息。"""
         options = self._options("news60s")
         if not options.get("enabled", True):
-            return event.plain_result("⚠️ 「今日新闻」已在插件配置里关闭。")
+            yield event.plain_result("⚠️ 「今日新闻」已在插件配置里关闭。")
+            return
 
         try:
             text, image = await news.get_daily_news(options)
         except Exception as exc:  # 网络或接口问题，只回一句提示，不让插件崩
             logger.exception("[tool_exe] 今日新闻获取失败")
-            return event.plain_result(f"📰 今日新闻获取失败：{exc}")
+            yield event.plain_result(f"📰 今日新闻获取失败：{exc}")
+            return
 
         mode = str(options.get("send_mode", "text")).lower()
         if mode == "image" and image:
-            return event.image_result(image)
-        if mode == "both" and image:
-            return event.chain_result([Comp.Plain(text), Comp.Image.fromURL(image)])
-        return event.plain_result(text)
+            yield event.image_result(image)
+        elif mode == "both" and image:
+            yield event.chain_result([Comp.Plain(text), Comp.Image.fromURL(image)])
+        else:
+            yield event.plain_result(text)
 
     def _options(self, name: str) -> dict:
         """合成一个配置字典交给 tools/ 里的函数。
