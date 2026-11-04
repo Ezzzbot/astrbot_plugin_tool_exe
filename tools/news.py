@@ -12,7 +12,7 @@ from .utils import fetch_json
 async def get_daily_news(options: dict, limit: int | None = None) -> tuple[str, str]:
     """获取今日新闻，返回 (文本, 图片地址)。
 
-    options 里会读取：api、max_items、cache_seconds、show_meta、show_tip、show_link、footer
+    options 里会读取：api、cache_seconds、show_meta、show_tip、show_link、footer
     """
     api = options.get("api") or "https://60s.viki.moe/v2/60s"
     payload = await fetch_json(api, options)
@@ -27,8 +27,8 @@ async def get_daily_news(options: dict, limit: int | None = None) -> tuple[str, 
     if not news:
         raise RuntimeError("接口暂时没有返回内容，可能还没更新")
 
-    count = limit or int(options.get("max_items", 15))
-    count = max(1, min(count, 30))  # 上限 30 条，避免消息过长
+    # 不传 limit 就把接口返回的全发出来；传了就按传的条数截断
+    count = max(1, min(limit or len(news), len(news)))
     text = format_news(data, news[:count], truncated=count < len(news), options=options)
     return text, str(data.get("image") or "")
 

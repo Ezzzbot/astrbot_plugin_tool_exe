@@ -11,7 +11,7 @@
 | `/工具箱` | `toolbox`、`功能列表` | 列出当前可用功能 |
 
 ```
-/今日新闻        # 按配置的条数输出
+/今日新闻        # 输出当天全部新闻
 /今日新闻 5      # 只看前 5 条
 60s 3           # 别名 + 条数
 ```
@@ -85,7 +85,6 @@ astrbot_plugin_tool_exe/
 | `network.timeout` | 10 | 单次请求超时（秒），所有功能共用 |
 | `network.retries` | 2 | 失败重试次数，只有网络错误和超时才重试 |
 | `network.proxy` | 空 | HTTP 代理，如 `http://127.0.0.1:7890` |
-| `news60s.max_items` | 15 | 最多展示条数，指令带数字可临时覆盖 |
 | `news60s.cache_seconds` | 600 | 数据缓存时长（秒），0 表示不缓存 |
 | `news60s.show_meta` | true | 显示日期 / 星期 / 农历 |
 | `news60s.show_tip` | true | 显示每日微语 |

@@ -85,11 +85,11 @@ class ToolBoxPlugin(Star):
     # ------------------------------------------------------------ LLM 触发
 
     @filter.llm_tool(name="get_daily_news")
-    async def llm_news(self, event: AstrMessageEvent, count: int = 10):
+    async def llm_news(self, event: AstrMessageEvent, count: int = 0):
         """获取今天的热点新闻速览。当用户问「今天有什么新闻」「最近发生了什么大事」时调用。
 
         Args:
-            count(number): 返回的新闻条数，默认 10
+            count(number): 返回的新闻条数，默认 0 表示全部返回
         """
         yield await self._reply_news(event, int(count) if count else None)
 
@@ -127,7 +127,7 @@ class ToolBoxPlugin(Star):
 
     @staticmethod
     def _read_number(message: str) -> int | None:
-        """从消息里取条数，例如 /今日新闻 5、60s 3；取不到就返回 None 用配置里的默认值。"""
+        """从消息里取条数，例如 /今日新闻 5、60s 3；取不到就返回 None，表示全部返回。"""
         words = message.replace("/", " ").split()
         if words and words[-1].isdigit():
             return int(words[-1])
