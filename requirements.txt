@@ -1,3 +1,5 @@
 # 插件运行所需的第三方依赖，AstrBot 安装插件时会自动 pip 安装本文件中的依赖
 # 网络请求统一使用异步的 aiohttp（官方开发规范不建议使用 requests）
 aiohttp>=3.9.0
+# 读取 config.yaml（面向开发者的配置）
+PyYAML>=6.0

@@ -11,12 +11,19 @@
 
 from __future__ import annotations
 
+import os
+
+import yaml
+
 import astrbot.api.message_components as Comp
 from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, register
 
 from .tools import news, utils
+
+# 开发者配置文件，和 main.py 放在同一层
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.yaml")
 
 # 指令名和别名写在常量里，改名字只改这里
 NEWS_CMD = "今日新闻"
@@ -28,6 +35,19 @@ HELP_TEXT = """🧰 工具箱
   60 秒读懂世界每日新闻速览（别名：60s、新闻60秒、看世界）"""
 
 
+def load_dev_config() -> dict:
+    """读 config.yaml（面向开发者的配置）。文件缺失或写错都不影响插件启动。"""
+    try:
+        with open(CONFIG_FILE, encoding="utf-8") as file:
+            data = yaml.safe_load(file) or {}
+    except FileNotFoundError:
+        return {}
+    except Exception:
+        logger.exception("[tool_exe] config.yaml 读取失败，已忽略，使用默认值")
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 @register(
     "astrbot_plugin_tool_exe",
     "大头",
@@ -37,7 +57,10 @@ HELP_TEXT = """🧰 工具箱
 class ToolBoxPlugin(Star):
     def __init__(self, context: Context, config: dict | None = None):
         super().__init__(context)
+        # WebUI 里改的配置（_conf_schema.json 定义的那三项）
         self.config = config or {}
+        # config.yaml 里的开发者配置
+        self.dev_config = load_dev_config()
 
     async def initialize(self) -> None:
         logger.info("[tool_exe] 插件已加载")
@@ -92,10 +115,15 @@ class ToolBoxPlugin(Star):
         return event.plain_result(text)
 
     def _options(self, name: str) -> dict:
-        """把公共的网络配置和这个功能的配置合成一个字典，交给 tools.py 里的函数。"""
-        network = self.config.get("network") or {}
-        feature = self.config.get(name) or {}
-        return {**network, **feature}
+        """合成一个配置字典交给 tools/ 里的函数。
+
+        来源有三层，后面的覆盖前面的：
+            config.yaml 的 network 段  →  config.yaml 的该功能段  →  WebUI 里的该功能段
+        """
+        network = self.dev_config.get("network") or {}
+        dev_feature = self.dev_config.get(name) or {}
+        web_feature = self.config.get(name) or {}
+        return {**network, **dev_feature, **web_feature}
 
     @staticmethod
     def _read_number(message: str) -> int | None:

@@ -53,9 +53,10 @@ astrbot_plugin_tool_exe/
 │   ├── news.py             # 今日新闻
 │   ├── utils.py            # 公共小工具（网络请求、缓存、连接池关闭）
 │   └── __init__.py
-├── _conf_schema.json       # WebUI 可视化配置
+├── _conf_schema.json       # WebUI 配置（面向用户，只有三项）
+├── config.yaml             # 开发者配置（网络参数、展示细节）
 ├── metadata.yaml           # 插件信息
-└── requirements.txt        # 第三方依赖（aiohttp）
+└── requirements.txt        # 第三方依赖（aiohttp、PyYAML）
 ```
 
 分工只有两条：
@@ -67,10 +68,31 @@ astrbot_plugin_tool_exe/
 
 ## 配置
 
-WebUI 插件配置页可视化修改（对应 `_conf_schema.json`）：
+配置分两层，各管各的。
 
-- **网络请求**：超时时间、失败重试次数、HTTP 代理
-- **今日新闻**：启用开关、接口地址、发送形式（纯文本 / 长图 / 图文）、展示条数、缓存时长、日期农历 / 微语 / 原文链接开关、自定义落款
+**WebUI 插件配置页**（`_conf_schema.json`，面向普通用户，只有三项）：
+
+| 配置项 | 说明 |
+| --- | --- |
+| 启用该功能 | 今日新闻的开关 |
+| 接口地址 | 默认 60s API，一般不用改 |
+| 发送形式 | 纯文本 / 长图 / 图文一起发 |
+
+**根目录 `config.yaml`**（面向开发者，改完在插件页点重载即可生效）：
+
+| 配置项 | 默认值 | 说明 |
+| --- | --- | --- |
+| `network.timeout` | 10 | 单次请求超时（秒），所有功能共用 |
+| `network.retries` | 2 | 失败重试次数，只有网络错误和超时才重试 |
+| `network.proxy` | 空 | HTTP 代理，如 `http://127.0.0.1:7890` |
+| `news60s.max_items` | 15 | 最多展示条数，指令带数字可临时覆盖 |
+| `news60s.cache_seconds` | 600 | 数据缓存时长（秒），0 表示不缓存 |
+| `news60s.show_meta` | true | 显示日期 / 星期 / 农历 |
+| `news60s.show_tip` | true | 显示每日微语 |
+| `news60s.show_link` | true | 显示原文链接 |
+| `news60s.footer` | 空 | 自定义落款 |
+
+合并顺序是：`config.yaml` 的 `network` → `config.yaml` 的功能段 → WebUI 里的功能段，后面的覆盖前面的。所以两处都有的配置项以 WebUI 为准，而 WebUI 里没有的项由 `config.yaml` 提供，文件删了也能跑（代码里有兜底默认值）。
 
 ## 新增一个功能
 
@@ -109,7 +131,11 @@ async def llm_ip(self, event: AstrMessageEvent):
     yield event.plain_result(await ip.get_ip_info(self._options("ipinfo")))
 ```
 
-**第三步**（可选），要新配置项就在 `_conf_schema.json` 里加一段，段名与 `_options("段名")` 保持一致。
+**第三步**（可选），要新配置项时按面向谁来决定放哪：
+- 普通用户需要改的 → 加在 `_conf_schema.json` 的功能段里；
+- 只有开发者调的（网络参数、缓存、排版开关）→ 加在 `config.yaml` 的同名段里。
+
+两处都读得到，`main.py` 里统一用 `self._options("段名")` 取，不用关心它来自哪个文件。
 
 ## 常见问题
 
