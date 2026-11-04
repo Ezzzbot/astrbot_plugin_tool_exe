@@ -1,0 +1,91 @@
+{
+  "network": {
+    "description": "网络请求设置",
+    "type": "object",
+    "hint": "所有功能共用同一套网络参数",
+    "items": {
+      "timeout": {
+        "description": "请求超时（秒）",
+        "type": "int",
+        "default": 10,
+        "slider": { "min": 3, "max": 60, "step": 1 }
+      },
+      "retries": {
+        "description": "失败重试次数",
+        "type": "int",
+        "default": 2,
+        "slider": { "min": 1, "max": 5, "step": 1 }
+      },
+      "proxy": {
+        "description": "HTTP 代理（可选）",
+        "type": "string",
+        "default": "",
+        "hint": "形如 http://127.0.0.1:7890，留空表示直连"
+      }
+    }
+  },
+  "news60s": {
+    "description": "今日新闻（60s 看世界）",
+    "type": "object",
+    "items": {
+      "enabled": {
+        "description": "启用该功能",
+        "type": "bool",
+        "default": true
+      },
+      "api": {
+        "description": "接口地址",
+        "type": "string",
+        "default": "https://60s.viki.moe/v2/60s",
+        "hint": "默认使用 60s API（开源项目 vikiboss/60s），一般无需修改"
+      },
+      "send_mode": {
+        "description": "发送形式",
+        "type": "string",
+        "default": "text",
+        "options": ["text", "image", "both"],
+        "labels": ["纯文本", "长图", "图文一起发"],
+        "subtitles": [
+          "推荐，所有平台都能正常显示",
+          "接口提供的当日长图，体积较大",
+          "先文字后配图，部分平台会拆成两条"
+        ]
+      },
+      "max_items": {
+        "description": "最多展示条数",
+        "type": "int",
+        "default": 15,
+        "slider": { "min": 1, "max": 30, "step": 1 },
+        "hint": "指令里带上数字可临时覆盖，如 /今日新闻 5"
+      },
+      "cache_seconds": {
+        "description": "数据缓存时长（秒）",
+        "type": "int",
+        "default": 600,
+        "slider": { "min": 0, "max": 3600, "step": 60 },
+        "hint": "群内连续查询时复用同一份数据，0 表示每次都请求接口"
+      },
+      "show_meta": {
+        "description": "显示日期 / 星期 / 农历",
+        "type": "bool",
+        "default": true
+      },
+      "show_tip": {
+        "description": "显示每日微语",
+        "type": "bool",
+        "default": true
+      },
+      "show_link": {
+        "description": "显示原文链接",
+        "type": "bool",
+        "default": true
+      },
+      "footer": {
+        "description": "自定义落款",
+        "type": "string",
+        "default": "",
+        "hint": "追加在消息末尾，留空不显示"
+      }
+    }
+  }
+}
