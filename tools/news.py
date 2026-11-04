@@ -9,7 +9,7 @@ from __future__ import annotations
 from .utils import fetch_json
 
 
-async def get_daily_news(options: dict, limit: int | None = None) -> tuple[str, str]:
+async def get_daily_news(options: dict) -> tuple[str, str]:
     """获取今日新闻，返回 (文本, 图片地址)。
 
     options 里会读取：api、cache_seconds、show_meta、show_tip、show_link、footer
@@ -27,13 +27,10 @@ async def get_daily_news(options: dict, limit: int | None = None) -> tuple[str, 
     if not news:
         raise RuntimeError("接口暂时没有返回内容，可能还没更新")
 
-    # 不传 limit 就把接口返回的全发出来；传了就按传的条数截断
-    count = max(1, min(limit or len(news), len(news)))
-    text = format_news(data, news[:count], truncated=count < len(news), options=options)
-    return text, str(data.get("image") or "")
+    return format_news(data, news, options=options), str(data.get("image") or "")
 
 
-def format_news(data: dict, news: list[str], truncated: bool, options: dict) -> str:
+def format_news(data: dict, news: list[str], options: dict) -> str:
     """把接口数据拼成一条好读的文本。想改排版只动这一个函数即可。"""
     lines = ["📰 今日新闻"]
 
@@ -49,8 +46,6 @@ def format_news(data: dict, news: list[str], truncated: bool, options: dict) -> 
 
     lines.append("")
     lines.extend(f"{index}. {item}" for index, item in enumerate(news, 1))
-    if truncated:
-        lines.append("……（更多内容请查看原文）")
 
     tip = str(data.get("tip") or "")
     if options.get("show_tip", True) and tip:

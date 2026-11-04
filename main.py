@@ -31,7 +31,7 @@ NEWS_ALIASES = {"60s", "新闻60秒", "看世界"}
 
 # /工具箱 的内容，新增功能时在这里补一行
 HELP_TEXT = """🧰 工具箱
-· /今日新闻 [条数]
+· /今日新闻
   60 秒读懂世界每日新闻速览（别名：60s、新闻60秒、看世界）"""
 
 
@@ -73,9 +73,8 @@ class ToolBoxPlugin(Star):
 
     @filter.command(NEWS_CMD, alias=NEWS_ALIASES)
     async def cmd_news(self, event: AstrMessageEvent):
-        """获取今日新闻。用法：/今日新闻 [条数]"""
-        limit = self._read_number(event.message_str)
-        yield await self._reply_news(event, limit)
+        """获取今日新闻。用法：/今日新闻"""
+        yield await self._reply_news(event)
 
     @filter.command("工具箱", alias={"toolbox", "功能列表"})
     async def cmd_help(self, event: AstrMessageEvent):
@@ -85,24 +84,20 @@ class ToolBoxPlugin(Star):
     # ------------------------------------------------------------ LLM 触发
 
     @filter.llm_tool(name="get_daily_news")
-    async def llm_news(self, event: AstrMessageEvent, count: int = 0):
-        """获取今天的热点新闻速览。当用户问「今天有什么新闻」「最近发生了什么大事」时调用。
-
-        Args:
-            count(number): 返回的新闻条数，默认 0 表示全部返回
-        """
-        yield await self._reply_news(event, int(count) if count else None)
+    async def llm_news(self, event: AstrMessageEvent):
+        """获取今天的热点新闻速览。当用户问「今天有什么新闻」「最近发生了什么大事」时调用。"""
+        yield await self._reply_news(event)
 
     # ------------------------------------------------------------ 两者共用
 
-    async def _reply_news(self, event: AstrMessageEvent, limit: int | None):
+    async def _reply_news(self, event: AstrMessageEvent):
         """指令和 LLM 工具都走这里：读配置 → 调 tools 里的函数 → 组装成消息。"""
         options = self._options("news60s")
         if not options.get("enabled", True):
             return event.plain_result("⚠️ 「今日新闻」已在插件配置里关闭。")
 
         try:
-            text, image = await news.get_daily_news(options, limit)
+            text, image = await news.get_daily_news(options)
         except Exception as exc:  # 网络或接口问题，只回一句提示，不让插件崩
             logger.exception("[tool_exe] 今日新闻获取失败")
             return event.plain_result(f"📰 今日新闻获取失败：{exc}")
@@ -124,11 +119,3 @@ class ToolBoxPlugin(Star):
         dev_feature = self.dev_config.get(name) or {}
         web_feature = self.config.get(name) or {}
         return {**network, **dev_feature, **web_feature}
-
-    @staticmethod
-    def _read_number(message: str) -> int | None:
-        """从消息里取条数，例如 /今日新闻 5、60s 3；取不到就返回 None，表示全部返回。"""
-        words = message.replace("/", " ").split()
-        if words and words[-1].isdigit():
-            return int(words[-1])
-        return None
