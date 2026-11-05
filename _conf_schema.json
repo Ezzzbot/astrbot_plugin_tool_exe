@@ -27,5 +27,16 @@
         ]
       }
     }
+  },
+  "fortune": {
+    "description": "今日运势",
+    "type": "object",
+    "items": {
+      "enabled": {
+        "description": "启用该功能",
+        "type": "bool",
+        "default": true
+      }
+    }
   }
 }

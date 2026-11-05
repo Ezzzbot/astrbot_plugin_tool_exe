@@ -15,7 +15,7 @@ from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, register
 
-from .tools import news, utils
+from .tools import fortune, news, utils
 
 # 开发者配置文件，和 main.py 放在同一层
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.yaml")
@@ -23,6 +23,9 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.yaml")
 # 指令名和别名写在常量里，改名字只改这里
 NEWS_CMD = "今日新闻"
 NEWS_ALIASES = {"60s", "新闻60秒", "看世界"}
+
+FORTUNE_CMD = "运势"
+FORTUNE_ALIASES = {"今日运势", "抽签"}
 
 
 def load_dev_config() -> dict:
@@ -41,7 +44,7 @@ def load_dev_config() -> dict:
 @register(
     "astrbot_plugin_tool_exe",
     "大头",
-    "综合性工具箱：以模块化方式接入各类实用功能，目前包含每日新闻速览。",
+    "综合性工具箱：以模块化方式接入各类实用功能，目前包含每日新闻速览与今日运势。",
     "1.0.0",
 )
 class ToolBoxPlugin(Star):
@@ -83,6 +86,20 @@ class ToolBoxPlugin(Star):
             yield event.chain_result([Comp.Plain(text), Comp.Image.fromURL(image)])
         else:
             yield event.plain_result(text)
+
+    @filter.command(FORTUNE_CMD, alias=FORTUNE_ALIASES)
+    async def cmd_fortune(self, event: AstrMessageEvent):
+        """抽今日运势。用法：/运势"""
+        options = self._options("fortune")
+        if not options.get("enabled", True):
+            yield event.plain_result("⚠️ 「今日运势」已在插件配置里关闭。")
+            return
+
+        text = fortune.get_fortune(
+            user_id=event.get_sender_id() or event.get_sender_name() or "anonymous",
+            name=event.get_sender_name(),
+        )
+        yield event.plain_result(text)
 
     def _options(self, name: str) -> dict:
         """合成一个配置字典交给 tools/ 里的函数。
