@@ -24,7 +24,7 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.yaml")
 NEWS_CMD = "今日新闻"
 NEWS_ALIASES = {"60s", "新闻60秒", "看世界"}
 
-FORTUNE_CMD = "运势"
+FORTUNE_CMD = "今日运势"
 FORTUNE_ALIASES = {"今日运势", "抽签"}
 
 
@@ -67,6 +67,9 @@ class ToolBoxPlugin(Star):
     @filter.command(NEWS_CMD, alias=NEWS_ALIASES)
     async def cmd_news(self, event: AstrMessageEvent):
         """获取今日新闻。用法：/今日新闻"""
+        # 关键：告诉 AstrBot 这条消息到此为止，不要再交给 LLM 重写一遍
+        event.stop_event()
+
         options = self._options("news60s")
         if not options.get("enabled", True):
             yield event.plain_result("⚠️ 「今日新闻」已在插件配置里关闭。")
@@ -89,7 +92,10 @@ class ToolBoxPlugin(Star):
 
     @filter.command(FORTUNE_CMD, alias=FORTUNE_ALIASES)
     async def cmd_fortune(self, event: AstrMessageEvent):
-        """抽今日运势。用法：/运势"""
+        """抽今日运势。用法：/今日运势"""
+        # 同上：不写这行，结果会被 LLM 加工后重说一遍
+        event.stop_event()
+
         options = self._options("fortune")
         if not options.get("enabled", True):
             yield event.plain_result("⚠️ 「今日运势」已在插件配置里关闭。")
